@@ -33,11 +33,8 @@ export default {
       axios.get(
         YOUTUBE_API_SEARCH_URL + '?part=id&part=snippet' + '&type=channel' + '&order=videoCount' + '&maxResults=5' + '&q=' + searchWord + '&key=' + this.youtubeAPIKey
       ).then((response) => {
-        console.log("search: ");
-        console.log(response.data.items);
         this.channels = response.data.items;
       }).catch((e) =>{
-        console.log(e);
         this.errors = e.response.data.error.message;
       })
     },
@@ -48,10 +45,10 @@ export default {
       axios.get(
         YOUTUBE_API_CHANNELS_URL + '?part=id,contentDetails,snippet,status' + '&id=' + channel.id.channelId + '&key=' + this.youtubeAPIKey
       ).then((response) => {
-        console.log("channels: ");
-        console.log(response);
         this.playlistId = response.data.items[0].contentDetails.relatedPlaylists.uploads;
         this.getPlaylistItemsList(this.playlistId);
+      }).catch((e) =>{
+        this.errors = e.response.data.error.message;
       })
     },
     getPlaylistItemsList(playlistId, nextPageToken = null) {
@@ -59,15 +56,17 @@ export default {
         axios.get(
           YOUTUBE_API_PLAYLISTITEMS_URL + '?part=id,contentDetails,snippet,status' + '&playlistId=' + playlistId + '&maxResults=50' + '&key=' + this.youtubeAPIKey + '&pageToken=' + nextPageToken
         ).then((res) => {
-          console.log(res);
           this.pushItems(res);
+        }).catch((e) =>{
+        this.errors = e.response.data.error.message;
         })
       } else {
         axios.get(
           YOUTUBE_API_PLAYLISTITEMS_URL + '?part=id,contentDetails,snippet,status' + '&playlistId=' + playlistId + '&maxResults=50' + '&key=' + this.youtubeAPIKey
         ).then((res) => {
-          console.log(res);
           this.pushItems(res);
+        }).catch((e) =>{
+        this.errors = e.response.data.error.message;
         })
       }
     },
@@ -83,12 +82,15 @@ export default {
       if (response.data.nextPageToken) {
         this.getPlaylistItemsList(this.playlistId, response.data.nextPageToken);
       } else {
-        console.log("pushItems is completed.");
         this.reversed = this.playlistItems.reverse();
-        console.log(this.reversed);
         this.message = "検索結果：";
       }
     },
+    imageClicked(e) {
+      let youtube = e.currentTarget.getAttribute('youtube');
+      let iframe = '<iframe src="' + youtube + '" frameborder="0"></iframe>';
+      e.currentTarget.outerHTML = iframe;
+    }
   },
 }
 </script>
@@ -97,6 +99,7 @@ export default {
   <div>
     <label>YouTube API Key: </label>
     <input type='text' v-model="this.youtubeAPIKey">
+    <a href="https://www.google.com/search?q=youtube+data+api+key+%E5%8F%96%E5%BE%97" target="_blank" rel="noopener noreferrer" style="text-align: right">APIキー取得方法をググる</a>
   </div>
   <div>
     <label>検索ワード: </label>
@@ -112,13 +115,15 @@ export default {
     </li>
   </ul>
   <span>{{ message }}</span>
-  <ul>
-    <li v-for="item in reversed" :key="item.title">
-      <a v-bind:href="'https://youtu.be/' + item.videoId" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
-    </li>
-  </ul>
+  <div v-for="item in reversed" :key="item.title">
+    <div class="yt">
+      <div @click="imageClicked" class="yt_video" v-bind:youtube="'https://www.youtube.com/embed/' + item.videoId + '?rel=0&showinfo=0&autoplay=0'">
+		    <img v-bind:src="'https://i.ytimg.com/vi/' + item.videoId + '/mqdefault.jpg'" alt="サンプル動画" width="100%" height="auto" />
+        <span>{{ item.title }}</span>
+	    </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-
 </style>
